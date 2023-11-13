@@ -36,8 +36,7 @@ jobs:
         aws ecr create-repository \
           --repository-name ${{ env.ECR_REPOSITORY }} \
           --query 'repository.repositoryUri' \
-          --output text \
-          2>/dev/null
+          --output text 
 
     - name: Login to Amazon ECR
       id: login-ecr
