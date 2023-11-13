@@ -32,11 +32,12 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Create repository
+      if: always()
       run: |
         aws ecr create-repository \
           --repository-name ${{ env.ECR_REPOSITORY }} \
           --query 'repository.repositoryUri' \
-          --output text >/dev/null 2>&1
+          --output text 
 
     - name: Login to Amazon ECR
       id: login-ecr
