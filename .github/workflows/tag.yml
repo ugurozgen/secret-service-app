@@ -32,6 +32,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Create repository
+        continue-on-error: true
         run: |
           aws ecr create-repository \
             --repository-name ${{ env.ECR_REPOSITORY }} \
@@ -39,12 +40,10 @@ jobs:
             --output text
 
       - name: Login to Amazon ECR
-        if: always()
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build, tag, and push image to Amazon ECR
-        if: always()
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
