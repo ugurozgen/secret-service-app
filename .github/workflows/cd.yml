@@ -1,0 +1,61 @@
+# when a push is done in another branch than master, create an ecr repository
+# associated with this branch and build + push the image
+name: cd
+
+on: 
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches-ignore:
+      - main
+
+env: 
+  AWS_REGION: eu-north-1
+  ECR_REPOSITORY: secret-service-app-${{ github.event.ref }}
+  SHORT_SHA: $(echo ${{ github.sha }} | cut -c 1-8)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+    steps:
+    - name: Github variables
+      run: |
+        echo github.event.ref: ${{ github.event.ref }}
+        echo github.ref_type: ${{ github.ref_type }}
+        echo github.ref_name: ${{ github.ref_name }}
+        echo github.sha: ${{ github.sha }}
+        
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Create repository
+      run: |
+        aws ecr create-repository \
+          --repository-name ${{ env.ECR_REPOSITORY }} \
+          --query 'repository.repositoryUri' \
+          --output text \
+          2>/dev/null
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker image build \
+          --tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.SHORT_SHA }} \
+          --tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest \
+          .
+        docker push --all-tags ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}
