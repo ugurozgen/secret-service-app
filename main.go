@@ -54,7 +54,7 @@ func main() {
 			return
 		}
 
-		_, err = client.Secrets.KvV2Write(context.Background(), "app", schema.KvV2WriteRequest{Data: newSecret}, vault.WithMountPath("kv"))
+		_, err = client.Secrets.KvV2Write(context.Background(), "app", schema.KvV2WriteRequest{Data: newSecret}, vault.WithMountPath("kv-v2"))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
